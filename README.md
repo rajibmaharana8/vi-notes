@@ -1,73 +1,57 @@
-# React + TypeScript + Vite
+# Vi-Notes
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+**Vi-Notes** is an authenticity verification platform designed to distinguish genuine human-written content from AI-generated or AI-assisted text. The system focuses on analyzing **writing behavior** alongside **statistical and linguistic characteristics** of the text to establish reliable authorship verification.
 
-Currently, two official plugins are available:
+---
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+## 🚀 Vision
+In an era dominated by Large Language Models, verifying true human authorship is a critical challenge. Vi-Notes restores trust in the written word by capturing the unique biological and cognitive "fingerprint" of the writing process.
 
-## React Compiler
+### We solve this by combining:
+- **Behavioral Signals:** Real-time analysis of the writing process.
+- **Statistical Analysis:** Deep-dive into content characteristics.
+- **Biometric Correlation:** Matching how content is written with what is written.
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+---
 
-## Expanding the ESLint configuration
+## 🧠 Core Methodology
+Human writing is naturally erratic, while AI-generated or pasted text is uniform. Vi-Notes captures:
+- **Variable Typing Speeds:** Natural human rhythm vs. bot-like consistency.
+- **Thinking Pauses:** Cognitive delays during idea formation.
+- **Iterative Revisions:** Human-like deletion and correction patterns.
+- **Pasted Block Detection:** Instant identification of externally inserted text.
 
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
+---
 
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
+## ✨ Key Features
+- **Writing Session Monitoring:** Captures keystroke timing metadata (preserving privacy—no characters stored).
+- **Behavioral Forensics:** Tracks pause distribution, typing variance, and revision frequency.
+- **Authenticity Shield:** Real-time "Human Confidence" rating based on the live typing session.
+- **Authorship Certificates:** Professional PDF reports documenting behavioral proof of work.
+- **Privacy-First Design:** Hardware-level entropy calculation with no raw key logging.
 
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
+---
 
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
-```
+## 🛠 Tech Stack (MERN)
+- **Frontend:** React, TypeScript, Vite
+- **Styling:** Premium Glassmorphism (Vanilla CSS)
+- **Utilities:** jsPDF, html2canvas (Report Generation)
+- **Planned Backend:** Node.js, Express.js, MongoDB
+- **Planned ML:** TensorFlow/PyTorch for anomaly detection
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+---
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
+## 🎯 Project Goals
+1. **Differentiate** between human-written, AI-assisted, and AI-generated text.
+2. **Adapt** to evolving AI writing tools.
+3. **Maintain** ethical, transparent, and privacy-conscious verification.
 
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
-```
+---
+
+## 📜 Contributing
+Contributions are welcome! If you're interested in implementing existing feature requests (Issue #1, #2, #3, #4) or proposing new ones, please open an issue or submit a pull request.
+
+---
+
+## ⚖️ License
+This project is licensed under the MIT License.
