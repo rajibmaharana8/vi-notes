@@ -12,8 +12,9 @@ const App: React.FC = () => {
   const [statusText, setStatusText] = useState('• Secure Session Active');
   const [isGenerating, setIsGenerating] = useState(false);
   const [theme, setTheme] = useState<'light' | 'dark'>('light');
+  const [activeTab, setActiveTab] = useState<'lab' | 'reports'>('lab');
+  const [highlightConfidence, setHighlightConfidence] = useState(false);
 
-  // Load theme preference
   useEffect(() => {
     const savedTheme = localStorage.getItem('theme') as 'light' | 'dark';
     if (savedTheme) {
@@ -112,23 +113,43 @@ const App: React.FC = () => {
     setStatusText('• Secure Session Active');
   };
 
+  const handleAnalyzeClick = () => {
+    setHighlightConfidence(true);
+    setTimeout(() => setHighlightConfidence(false), 2000);
+    const sidebar = document.querySelector('.sidebar-section');
+    if (sidebar) {
+      sidebar.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+    addLog('system', 'Manual analysis triggered.');
+  };
+
   return (
     <>
       <header className="app-header">
-        <div className="logo">
-          <img src="/logo.png" alt="ViNote Logo" />
+        <div className="logo" onClick={() => setActiveTab('lab')}>
+          <img src="/logo.png" alt="VN Logo" style={{ borderRadius: '4px' }} />
           <span className="logo-text">ViNote<b>s</b></span>
         </div>
         
         <div className="search-bar-placeholder">
-          <span style={{ marginRight: '8px' }}>🔍</span> Search for anything...
+          <span style={{ marginRight: '8px' }}>🔍</span> Search for reports or authors...
         </div>
 
         <nav>
           <ul className="nav-links">
-            <li><a href="#" className="nav-item">Writing Lab</a></li>
-            <li><a href="#" className="nav-item">Verification Hub</a></li>
-            <li><a href="#" className="nav-item">My Reports</a></li>
+            <li>
+              <a href="#" className={`nav-item ${activeTab === 'lab' ? 'active' : ''}`} onClick={() => setActiveTab('lab')}>
+                Writing Lab
+              </a>
+            </li>
+            <li>
+              <a href="#" className={`nav-item ${activeTab === 'reports' ? 'active' : ''}`} onClick={() => setActiveTab('reports')}>
+                My Reports
+              </a>
+            </li>
+            <li>
+              <a href="#" className="nav-item">Verification Hub</a>
+            </li>
           </ul>
         </nav>
 
@@ -137,7 +158,7 @@ const App: React.FC = () => {
         </button>
 
         <div style={{ display: 'flex', gap: '12px', marginLeft: '12px' }}>
-          <button className="btn btn-outline">Analyze Text</button>
+          <button className="btn btn-outline" onClick={handleAnalyzeClick}>Analyze Text</button>
           <button className="btn btn-primary" onClick={handleExport} disabled={isGenerating}>
             {isGenerating ? 'Exporting...' : 'Get Certificate'}
           </button>
@@ -146,79 +167,90 @@ const App: React.FC = () => {
 
       <main className="main-wrapper">
         <section className="hero-section">
-          <h1>Verification Environment</h1>
-          <p>Analyze writing behavior in real-time to generate your Human Authorship Certificate.</p>
+          <h1>{activeTab === 'lab' ? 'Verification Environment' : 'Authorship Reports'}</h1>
+          <p>{activeTab === 'lab' ? 'Analyze writing behavior in real-time to generate your Human Authorship Certificate.' : 'View your previously generated certificates and authorship analytics.'}</p>
         </section>
 
-        <div className="editor-layout">
-          <div className="editor-main">
-            <div className="editor-card">
-              <div className="editor-card-header">
-                <h2>Writing Workspace</h2>
-                <div style={{ display: 'flex', gap: '8px' }}>
-                  <button onClick={resetSession} className="btn btn-outline" style={{ height: '32px', fontSize: '0.8rem' }}>Clear All</button>
+        {activeTab === 'lab' ? (
+          <div className="editor-layout">
+            <div className="editor-main">
+              <div className="editor-card">
+                <div className="editor-card-header">
+                  <h2>Writing Workspace</h2>
+                  <div style={{ display: 'flex', gap: '8px' }}>
+                    <button onClick={resetSession} className="btn btn-outline" style={{ height: '32px', fontSize: '0.8rem' }}>Clear All</button>
+                  </div>
                 </div>
-              </div>
-              <textarea
-                placeholder="Start typing your content here. Our behavioral engine analyzes rhythmic variance, cognitive pauses, and revision patterns to verify human authorship."
-                onKeyDown={handleKeyDown}
-                onPaste={handlePaste}
-                onChange={handleTextChange}
-              />
-              <div className="editor-footer">
-                <div style={{ display: 'flex', gap: '16px' }}>
-                  <span><b>{wordCount}</b> Words</span>
-                  <span><b>{charCount}</b> Characters</span>
+                <textarea
+                  placeholder="Start typing your content here. Our behavioral engine analyzes rhythmic variance, cognitive pauses, and revision patterns to verify human authorship."
+                  onKeyDown={handleKeyDown}
+                  onPaste={handlePaste}
+                  onChange={handleTextChange}
+                />
+                <div className="editor-footer">
+                  <div style={{ display: 'flex', gap: '16px' }}>
+                    <span><b>{wordCount}</b> Words</span>
+                    <span><b>{charCount}</b> Characters</span>
+                  </div>
+                  <div>{statusText}</div>
                 </div>
-                <div>{statusText}</div>
               </div>
             </div>
-          </div>
 
-          <aside className="sidebar-section">
-            <div className="card">
-              <h3 className="card-title">Authorship Status</h3>
-              <div className="confidence-meter">
-                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
-                  <span style={{ fontSize: '0.9rem', color: 'var(--text-secondary)' }}>Human Confidence</span>
-                  <span style={{ fontWeight: 700, color: confidence > 70 ? 'var(--primary-color)' : '#e74c3c' }}>{confidence}%</span>
+            <aside className="sidebar-section">
+              <div className={`card ${highlightConfidence ? 'highlighted' : ''}`}>
+                <h3 className="card-title">Authorship Status</h3>
+                <div className="confidence-meter">
+                  <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
+                    <span style={{ fontSize: '0.9rem', color: 'var(--text-secondary)' }}>Human Confidence</span>
+                    <span style={{ fontWeight: 700, color: confidence > 70 ? 'var(--primary-color)' : '#e74c3c' }}>{confidence}%</span>
+                  </div>
+                  <div className="progress-bar">
+                    <div className="progress-fill" style={{ width: `${confidence}%`, background: confidence > 70 ? 'var(--primary-color)' : '#e74c3c' }} />
+                  </div>
+                  <p style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', marginTop: '16px' }}>
+                    Behavioral fingerprint: <b>{statsRef.current.intervals.length} rhythmic data points</b> collected.
+                  </p>
                 </div>
-                <div className="progress-bar">
-                  <div className="progress-fill" style={{ width: `${confidence}%`, background: confidence > 70 ? 'var(--primary-color)' : '#e74c3c' }} />
-                </div>
-                <p style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', marginTop: '16px' }}>
-                  Behavioral fingerprint: <b>{statsRef.current.intervals.length} rhythmic data points</b> collected.
+                <p style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', lineHeight: 1.5 }}>
+                  A high score confirms content was generated iteratively by a human, rather than being pasted or synthetically generated.
                 </p>
               </div>
-              <p style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', lineHeight: 1.5 }}>
-                A high score confirms content was generated iteratively by a human, rather than being pasted or synthetically generated.
-              </p>
-            </div>
 
-            <div className="card">
-              <h3 className="card-title">Live Behavioral Logs</h3>
-              <div className="log-container">
-                {logs.length === 0 ? (
-                  <div style={{ padding: '24px', textAlign: 'center', color: 'var(--text-secondary)', fontSize: '0.85rem' }}>
-                    Waiting for interaction...
-                  </div>
-                ) : (
-                  logs.map((log) => (
-                    <div key={log.id} className="log-entry">
-                      <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                        <span className="log-type" style={{ color: log.type === 'paste' ? '#e74c3c' : 'var(--primary-color)' }}>
-                          {log.type}
-                        </span>
-                        <span className="log-time">{log.timestamp}</span>
-                      </div>
-                      <span className="log-message">{log.message}</span>
+              <div className="card">
+                <h3 className="card-title">Live Behavioral Logs</h3>
+                <div className="log-container">
+                  {logs.length === 0 ? (
+                    <div style={{ padding: '24px', textAlign: 'center', color: 'var(--text-secondary)', fontSize: '0.85rem' }}>
+                      Waiting for interaction...
                     </div>
-                  ))
-                )}
+                  ) : (
+                    logs.map((log) => (
+                      <div key={log.id} className="log-entry">
+                        <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                          <span className="log-type" style={{ color: log.type === 'paste' ? '#e74c3c' : 'var(--primary-color)' }}>
+                            {log.type}
+                          </span>
+                          <span className="log-time">{log.timestamp}</span>
+                        </div>
+                        <span className="log-message">{log.message}</span>
+                      </div>
+                    ))
+                  )}
+                </div>
               </div>
+            </aside>
+          </div>
+        ) : (
+          <div className="reports-view">
+            <div className="card" style={{ textAlign: 'center', padding: '64px' }}>
+              <div style={{ fontSize: '3rem', marginBottom: '16px' }}>📄</div>
+              <h3>No Reports Found</h3>
+              <p style={{ color: 'var(--text-secondary)' }}>You haven't generated any authorship certificates yet.</p>
+              <button className="btn btn-primary" style={{ marginTop: '24px' }} onClick={() => setActiveTab('lab')}>Start Writing</button>
             </div>
-          </aside>
-        </div>
+          </div>
+        )}
       </main>
 
       <footer className="app-footer">

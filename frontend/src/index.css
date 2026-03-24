@@ -112,8 +112,17 @@ body {
   border-radius: 4px;
 }
 
-.nav-item:hover {
+.nav-item.active {
   color: var(--primary-color);
+  font-weight: 700;
+  border-bottom: 2px solid var(--primary-color);
+  border-radius: 0;
+}
+
+.card.highlighted {
+  border-color: var(--primary-color);
+  box-shadow: 0 0 20px rgba(164, 53, 240, 0.3);
+  transform: scale(1.02);
 }
 
 /* Theme Toggle Button */
