@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useRef } from 'react';
+import React, { useState, useCallback, useRef, useEffect } from 'react';
 import type { LogEvent, WritingStats } from './types/index';
 import { generateAuthorshipPDF } from './utils/pdfGenerator';
 import { calculateAuthenticityScore } from './utils/analysisEngine';
@@ -9,10 +9,26 @@ const App: React.FC = () => {
   const [wordCount, setWordCount] = useState(0);
   const [charCount, setCharCount] = useState(0);
   const [confidence, setConfidence] = useState(100);
-  const [statusText, setStatusText] = useState('• SECURE SESSION ACTIVE');
+  const [statusText, setStatusText] = useState('• Secure Session Active');
   const [isGenerating, setIsGenerating] = useState(false);
+  const [theme, setTheme] = useState<'light' | 'dark'>('light');
 
-  // Core behavioral data storage (Persists across re-renders)
+  // Load theme preference
+  useEffect(() => {
+    const savedTheme = localStorage.getItem('theme') as 'light' | 'dark';
+    if (savedTheme) {
+      setTheme(savedTheme);
+      document.documentElement.setAttribute('data-theme', savedTheme);
+    }
+  }, []);
+
+  const toggleTheme = () => {
+    const newTheme = theme === 'light' ? 'dark' : 'light';
+    setTheme(newTheme);
+    document.documentElement.setAttribute('data-theme', newTheme);
+    localStorage.setItem('theme', newTheme);
+  };
+
   const statsRef = useRef<WritingStats>({
     lastKeyTime: null,
     intervals: [],
@@ -22,9 +38,6 @@ const App: React.FC = () => {
     pastedCharCount: 0,
   });
 
-  /**
-   * Logs behavioral events for forensic verification.
-   */
   const addLog = useCallback((type: LogEvent['type'], message: string) => {
     const newLog: LogEvent = {
       id: Math.random().toString(36).substring(2, 9),
@@ -32,12 +45,9 @@ const App: React.FC = () => {
       message,
       timestamp: new Date().toLocaleTimeString('en-US', { hour12: false, hour: '2-digit', minute: '2-digit', second: '2-digit' }),
     };
-    setLogs((prev) => [newLog, ...prev].slice(0, 12));
+    setLogs((prev) => [newLog, ...prev].slice(0, 15));
   }, []);
 
-  /**
-   * Resets all session data when the editor is cleared manually.
-   */
   const resetSession = useCallback(() => {
     statsRef.current = {
       lastKeyTime: null,
@@ -49,165 +59,179 @@ const App: React.FC = () => {
     };
     setConfidence(100);
     setLogs([]);
-    addLog('system', 'Session reset. Behavior analysis restarted.');
+    addLog('system', 'Behavior analysis restarted.');
   }, [addLog]);
 
-  /**
-   * Primary input change handler for content statistics.
-   */
   const handleTextChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     const text = e.target.value;
-    
-    // Auto-reset stats if the user manually clears the text box
     if (text.length === 0) {
       resetSession();
       setCharCount(0);
       setWordCount(0);
       return;
     }
-
     setCharCount(text.length);
     setWordCount(text.trim() === '' ? 0 : text.trim().split(/\s+/).length);
-    
-    // Immediate Re-Analysis
     const newConfidence = calculateAuthenticityScore(statsRef.current, confidence);
     setConfidence(newConfidence);
   };
 
-  /**
-   * Low-level event listener for keystroke behaviors.
-   */
   const handleKeyDown = useCallback((e: React.KeyboardEvent) => {
     const now = Date.now();
     const stats = statsRef.current;
-    
-    // Capture Iterative Revisions
     if (e.key === 'Backspace' || e.key === 'Delete') {
       stats.deletionCount++;
-      addLog('deletion', 'Revision behavior detected.');
+      addLog('deletion', 'Modification detected.');
     }
-
-    // Capture Inter-Key Intervals
     if (stats.lastKeyTime) {
       const diff = now - stats.lastKeyTime;
       stats.intervals.push(diff);
-      
-      // Capture Significant Cognitive Thinking Pauses
       if (diff > 2500) {
         stats.pauseCount++;
-        addLog('timing', `Thinking pause: ${(diff/1000).toFixed(1)}s`);
+        addLog('timing', `Pause: ${(diff/1000).toFixed(1)}s`);
       }
     }
-    
     stats.lastKeyTime = now;
   }, [addLog]);
 
-  /**
-   * Detects non-sequential content injection.
-   */
   const handlePaste = useCallback((e: React.ClipboardEvent) => {
     const stats = statsRef.current;
     const pastedText = e.clipboardData.getData('text');
-    
     stats.pasteCount++;
     stats.pastedCharCount += pastedText.length;
-    
-    addLog('paste', `BLOCK INSERTED: ${pastedText.length} chars.`);
-    
+    addLog('paste', `Pasted ${pastedText.length} characters.`);
     const newConfidence = calculateAuthenticityScore(statsRef.current, confidence);
     setConfidence(newConfidence);
   }, [addLog, confidence]);
 
-  /**
-   * Official Certificate Export
-   */
   const handleExport = async () => {
     setIsGenerating(true);
-    setStatusText('• PREPARING CERTIFICATE...');
-    
+    setStatusText('• Preparing Certificate...');
     await generateAuthorshipPDF(statsRef.current, logs, confidence, wordCount);
-    
     setIsGenerating(false);
-    setStatusText('• SECURE SESSION ACTIVE');
+    setStatusText('• Secure Session Active');
   };
 
   return (
     <>
-      <header className="app-header glass">
+      <header className="app-header">
         <div className="logo">
-          <div className="logo-icon">V</div>
-          <span>ViNote<b>s</b></span>
+          <img src="/logo.png" alt="ViNote Logo" />
+          <span className="logo-text">ViNote<b>s</b></span>
         </div>
+        
+        <div className="search-bar-placeholder">
+          <span style={{ marginRight: '8px' }}>🔍</span> Search for anything...
+        </div>
+
         <nav>
           <ul className="nav-links">
-            <li><a href="#" className="active">Writing Lab</a></li>
-            <li><a href="#">Analysis</a></li>
-            <li><a href="#">Privacy</a></li>
+            <li><a href="#" className="nav-item">Writing Lab</a></li>
+            <li><a href="#" className="nav-item">Verification Hub</a></li>
+            <li><a href="#" className="nav-item">My Reports</a></li>
           </ul>
         </nav>
-        <button className="btn-primary" onClick={handleExport} disabled={isGenerating}>
-          {isGenerating ? 'Generating...' : 'Download Certificate'}
+
+        <button className="theme-toggle" onClick={toggleTheme} title="Toggle Dark/Light Mode">
+          {theme === 'light' ? '🌙' : '☀️'}
         </button>
+
+        <div style={{ display: 'flex', gap: '12px', marginLeft: '12px' }}>
+          <button className="btn btn-outline">Analyze Text</button>
+          <button className="btn btn-primary" onClick={handleExport} disabled={isGenerating}>
+            {isGenerating ? 'Exporting...' : 'Get Certificate'}
+          </button>
+        </div>
       </header>
 
       <main className="main-wrapper">
+        <section className="hero-section">
+          <h1>Verification Environment</h1>
+          <p>Analyze writing behavior in real-time to generate your Human Authorship Certificate.</p>
+        </section>
+
         <div className="editor-layout">
-          <div className="editor-section">
-            <div className="editor-card glass">
+          <div className="editor-main">
+            <div className="editor-card">
+              <div className="editor-card-header">
+                <h2>Writing Workspace</h2>
+                <div style={{ display: 'flex', gap: '8px' }}>
+                  <button onClick={resetSession} className="btn btn-outline" style={{ height: '32px', fontSize: '0.8rem' }}>Clear All</button>
+                </div>
+              </div>
               <textarea
-                placeholder="Type naturally. Every pause and rhythmic variance builds your unique 'Human Signature'."
+                placeholder="Start typing your content here. Our behavioral engine analyzes rhythmic variance, cognitive pauses, and revision patterns to verify human authorship."
                 onKeyDown={handleKeyDown}
                 onPaste={handlePaste}
                 onChange={handleTextChange}
               />
-              <div className="editor-toolbar">
-                <div style={{ display: 'flex', gap: '1rem' }}>
-                  <div className="stat-badge"><span>{wordCount}</span> Words</div>
-                  <div className="stat-badge"><span>{charCount}</span> Characters</div>
+              <div className="editor-footer">
+                <div style={{ display: 'flex', gap: '16px' }}>
+                  <span><b>{wordCount}</b> Words</span>
+                  <span><b>{charCount}</b> Characters</span>
                 </div>
-                <div style={{ color: '#475569', fontSize: '0.85rem', fontWeight: 600 }}>{statusText}</div>
+                <div>{statusText}</div>
               </div>
             </div>
           </div>
 
           <aside className="sidebar-section">
-            <div className="sidebar-card glass">
-              <h3 className="card-title">Authenticity Shield</h3>
-              <div style={{ padding: '0.5rem 0' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.4rem' }}>
-                  <span style={{ fontSize: '0.75rem', color: '#94a3b8' }}>Confidence</span>
-                  <span style={{ fontSize: '0.75rem', fontWeight: 700, color: confidence > 70 ? '#38bdf8' : '#fb7185' }}>{confidence}%</span>
+            <div className="card">
+              <h3 className="card-title">Authorship Status</h3>
+              <div className="confidence-meter">
+                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
+                  <span style={{ fontSize: '0.9rem', color: 'var(--text-secondary)' }}>Human Confidence</span>
+                  <span style={{ fontWeight: 700, color: confidence > 70 ? 'var(--primary-color)' : '#e74c3c' }}>{confidence}%</span>
                 </div>
-                <div style={{ width: '100%', height: '8px', background: 'rgba(255,255,255,0.05)', borderRadius: '4px', overflow: 'hidden' }}>
-                  <div style={{ width: `${confidence}%`, height: '100%', background: confidence > 70 ? 'linear-gradient(to right, #38bdf8, #818cf8)' : '#fb7185', transition: 'width 0.4s ease-out' }} />
+                <div className="progress-bar">
+                  <div className="progress-fill" style={{ width: `${confidence}%`, background: confidence > 70 ? 'var(--primary-color)' : '#e74c3c' }} />
                 </div>
-                <p style={{ fontSize: '0.7rem', color: '#64748b', marginTop: '1rem', lineHeight: 1.4 }}>
-                  Biological fingerprint: <b>{statsRef.current.intervals.length} signals</b> captured.
+                <p style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', marginTop: '16px' }}>
+                  Behavioral fingerprint: <b>{statsRef.current.intervals.length} rhythmic data points</b> collected.
                 </p>
-                <button 
-                  onClick={resetSession}
-                  style={{ background: 'transparent', border: '1px solid #334155', borderRadius: '4px', color: '#64748b', fontSize: '0.65rem', padding: '0.25rem 0.5rem', marginTop: '1rem', cursor: 'pointer' }}>
-                  Reset Session Data
-                </button>
               </div>
+              <p style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', lineHeight: 1.5 }}>
+                A high score confirms content was generated iteratively by a human, rather than being pasted or synthetically generated.
+              </p>
             </div>
 
-            <div className="sidebar-card glass">
-              <h3 className="card-title">Behavior Logs</h3>
-              <div style={{ maxHeight: '400px', overflowY: 'auto' }}>
-                {logs.length === 0 ? <p style={{ color: '#475569', fontSize: '0.8rem' }}>Monitoring signals...</p> : 
+            <div className="card">
+              <h3 className="card-title">Live Behavioral Logs</h3>
+              <div className="log-container">
+                {logs.length === 0 ? (
+                  <div style={{ padding: '24px', textAlign: 'center', color: 'var(--text-secondary)', fontSize: '0.85rem' }}>
+                    Waiting for interaction...
+                  </div>
+                ) : (
                   logs.map((log) => (
-                    <div key={log.id} className={`log-entry ${log.type}`}>
-                      <span style={{ opacity: 0.5 }}>{log.timestamp}</span> {log.message}
+                    <div key={log.id} className="log-entry">
+                      <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                        <span className="log-type" style={{ color: log.type === 'paste' ? '#e74c3c' : 'var(--primary-color)' }}>
+                          {log.type}
+                        </span>
+                        <span className="log-time">{log.timestamp}</span>
+                      </div>
+                      <span className="log-message">{log.message}</span>
                     </div>
-                  ))}
+                  ))
+                )}
               </div>
             </div>
           </aside>
         </div>
       </main>
 
-      <footer className="app-footer"><p className="copyright">© 2024 Vi-Notes. Official Prototype for Human Content Verification.</p></footer>
+      <footer className="app-footer">
+        <div className="footer-content">
+          <div className="footer-logo">ViNote<b>s</b></div>
+          <p className="copyright">© 2024 Vi-Notes, Inc. All rights reserved. Intellectual Property Verification Platform.</p>
+          <div style={{ display: 'flex', gap: '24px', fontSize: '0.8rem', color: 'var(--text-secondary)' }}>
+            <a href="#">Privacy Policy</a>
+            <a href="#">Terms of Service</a>
+            <a href="#">Help Center</a>
+          </div>
+        </div>
+      </footer>
     </>
   );
 };
