@@ -32,11 +32,33 @@ Human writing is naturally erratic, while AI-generated or pasted text is uniform
 
 ---
 
+## 🛠 Project Structure
+```text
+/vi_notes_current
+├── /frontend      # React (Vite) frontend application
+├── /backend       # Node.js (Express) backend API
+└── README.md
+```
+
+## 🚀 Getting Started
+
+### Frontend
+1. Navigate to `frontend/`
+2. Run `npm install`
+3. Run `npm run dev`
+
+### Backend
+1. Navigate to `backend/`
+2. Run `npm install`
+3. Run `npm run dev`
+
+---
+
 ## 🛠 Tech Stack (MERN)
 - **Frontend:** React, TypeScript, Vite
 - **Styling:** Premium Glassmorphism (Vanilla CSS)
 - **Utilities:** jsPDF, html2canvas (Report Generation)
-- **Planned Backend:** Node.js, Express.js, MongoDB
+- **Backend:** Node.js, Express.js, MongoDB (Basic skeleton set up)
 - **Planned ML:** TensorFlow/PyTorch for anomaly detection
 
 ---
