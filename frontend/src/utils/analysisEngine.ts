@@ -1,51 +1,63 @@
 import type { WritingStats } from '../types/index';
 
 /**
- * Core Analysis Engine for Vi-Notes.
- * This determines the 'Human Confidence Score' based on:
- * 1. Revision frequency (deletions)
- * 2. Thinking pauses (significant intervals)
- * 3. Input rhythm (variance in keystroke timings)
- * 4. Paste frequency (penalty)
+ * Advanced Dynamic Analysis Engine for Vi-Notes.
+ * Implements a 'Dilution and Recovery' model where human behavior (typing) 
+ * can eventually overcome penalties from suspicious behavior (pasting).
  */
 export const calculateAuthenticityScore = (
   stats: WritingStats,
-  _currentScore: number // Prefix with underscore as it is intentionally unused for this heuristic
+  _currentScore: number 
 ): number => {
-  let score = 85; // Starting base level
+  const manualTypedCount = stats.intervals.length;
+  const totalVolume = manualTypedCount + stats.pastedCharCount;
 
-  // 1. Reward Revision: Humans fix things.
-  score += Math.min(10, stats.deletionCount * 2);
+  // Default to 100 if no data yet
+  if (totalVolume === 0) return 100;
 
-  // 2. Reward Thinking: Significant thinking pauses.
-  score += Math.min(5, stats.pauseCount * 2);
+  /**
+   * 1. HUMAN RATIO (Base Confidence)
+   * This is the strongest signal. Every manual character 'dilutes' previous pasted content.
+   */
+  const humanRatio = manualTypedCount / totalVolume;
+  let score = humanRatio * 90; // Up to 90% purely from manual vs. pasted ratio
 
-  // 3. Reward Volume: Consistency in manual input.
-  if (stats.intervals.length > 50) score += 5;
+  /**
+   * 2. BEHAVIOR BONUSES (Recovery Mechanism)
+   * Humans fix mistakes and think. These behaviors prove human presence 
+   * and allow a score to climb back even after pasting.
+   */
+  const revisionBonus = Math.min(10, stats.deletionCount * 3);
+  const thinkingBonus = Math.min(10, stats.pauseCount * 4);
+  score += (revisionBonus + thinkingBonus);
 
-  // 4. Penalize Pasting: Large chunks are suspicious.
-  score -= (stats.pasteCount * 25);
-  if (stats.pastedCharCount > 20) score -= 30;
-
-  // 5. Check Timing Variance (Rhythm):
-  if (stats.intervals.length > 15) {
+  /**
+   * 3. RHYTHM & VARIANCE
+   * Typing rhythm (variance) adds a final layer of confidence.
+   */
+  if (manualTypedCount > 15) {
     const sum = stats.intervals.reduce((a, b) => a + b, 0);
-    const avg = sum / stats.intervals.length;
+    const avg = sum / manualTypedCount;
     
-    // Variance calculation
     const variance = stats.intervals
       .map(x => Math.pow(x - avg, 2))
-      .reduce((a, b) => a + b, 0) / stats.intervals.length;
+      .reduce((a, b) => a + b, 0) / manualTypedCount;
     
-    // Extremely low variance usually indicates simulated input (bots).
-    if (variance < 80) {
-      score -= 20;
-    } else if (variance > 500) {
-      // Natural jitter in human typing boosts confidence.
-      score += 5;
+    // Extremely low variance usually indicates bots. 
+    // Human variance is usually > 150.
+    if (variance < 70) {
+      score -= 25; // Drastic penalty for bot-like consistency
+    } else if (variance > 450) {
+      score += 5; // Reward for natural human jitter
     }
   }
 
+  /**
+   * 4. PASTE EVENT PENALTY
+   * Small penalty for the 'act' of pasting, regardless of size.
+   */
+  score -= (stats.pasteCount * 8);
+
   // Ensure result stays within 0-100%
-  return Math.max(0, Math.min(100, score));
+  return Math.max(0, Math.min(100, Math.round(score)));
 };
